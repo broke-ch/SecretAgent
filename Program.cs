@@ -154,64 +154,66 @@ public class Program
         return Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
     }
 
+private static void AddCamera()
+{
+    Console.WriteLine("Enter the camera's location (X,Y):");
+    var location = ReadCoordinates();
 
-    private static void AddCamera()
+    Console.WriteLine("Enter the direction the camera is facing (n, s, e or w):");
+    char direction;
+    while (true)
     {
-        Console.WriteLine("Enter the camera's location (X,Y):");
-        var location = ReadCoordinates();
+        direction = Console.ReadLine().ToLower()[0];
+        if (direction == 'n' || direction == 's' || direction == 'e' || direction == 'w')
+            break;
+        else
+            Console.WriteLine("Invalid direction.");
+    }
 
-        Console.WriteLine("Enter the direction the camera is facing (n, s, e or w):");
-        char direction;
-        while (true)
-        {
-            direction = Console.ReadLine().ToLower()[0];
-            if (direction == 'n' || direction == 's' || direction == 'e' || direction == 'w')
-                break;
-            else
-                Console.WriteLine("Invalid direction.");
-        }
+    if (!obstacles.ContainsKey("c"))
+    {
+        obstacles["c"] = new List<Tuple<int, int>>();
+    }
 
-        if (!obstacles.ContainsKey("c"))
-        {
-            obstacles["c"] = new List<Tuple<int, int>>();
-        }
+    int dx = 0, dy = 0;
 
-        switch (direction)
+    switch (direction)
+    {
+        case 'n':
+            dy = -1;
+            break;
+        case 's':
+            dy = 1;
+            break;
+        case 'e':
+            dx = 1;
+            break;
+        case 'w':
+            dx = -1;
+            break;
+    }
+
+    for (int distance = 1; distance <= byte.MaxValue; distance++) // the maximum distance we want the camera to see
+    {
+        for (int offset = -distance; offset <= distance; offset++)
         {
-            case 'n':
-                for (int y = location.Item2; y >= -byte.MaxValue; y--) // Changed condition
-                {
-                    AddCameraVision(location.Item1, y); // Directly north
-                    AddCameraVision(location.Item1 - (location.Item2 - y), y); // 45 degrees west
-                    AddCameraVision(location.Item1 + (location.Item2 - y), y); // 45 degrees east
-                }
-                break;
-            case 'e':
-                for (int x = location.Item1; x <= byte.MaxValue; x++) // Changed condition
-                {
-                    AddCameraVision(x, location.Item2); // Directly east
-                    AddCameraVision(x, location.Item2 - (x - location.Item1)); // 45 degrees north
-                    AddCameraVision(x, location.Item2 + (x - location.Item1)); // 45 degrees south
-                }
-                break;
-            case 's':
-                for (int y = location.Item2; y <= byte.MaxValue ; y++) // Changed condition
-                {
-                    AddCameraVision(location.Item1, y); // Directly south
-                    AddCameraVision(location.Item1 - (y - location.Item2), y); // 45 degrees west
-                    AddCameraVision(location.Item1 + (y - location.Item2), y); // 45 degrees east
-                }
-                break;
-            case 'w':
-                for (int x = location.Item1; x >= -byte.MaxValue ; x--) // Changed condition
-                {
-                    AddCameraVision(x, location.Item2); // Directly west
-                    AddCameraVision(x, location.Item2 + (location.Item1 - x)); // 45 degrees north
-                    AddCameraVision(x, location.Item2 - (location.Item1 - x)); // 45 degrees south
-                }
-                break;
+            int x = location.Item1 + dx * distance;
+            int y = location.Item2 + dy * distance;
+
+            if (dx != 0) // camera facing east or west
+            {
+                y += offset;
+            }
+            else // camera facing north or south
+            {
+                x += offset;
+            }
+
+            AddCameraVision(x, y);
         }
     }
+}
+   
 
     private static void AddCameraVision(int x, int y)
     {
