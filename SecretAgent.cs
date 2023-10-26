@@ -78,8 +78,6 @@ public static class Utility
         return Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
     }
 
-    // Added utility methods for cleaner code
-
     public static bool IsValidFence(Tuple<int, int> start, Tuple<int, int> end)
     {
         return (start.Item1 == end.Item1 || start.Item2 == end.Item2) && 
@@ -110,7 +108,6 @@ public static List<Tuple<int, int>> GenerateFenceCoordinates(Tuple<int, int> sta
                 coordinates.Add(new Tuple<int, int>(x, start.Item2));
             }
         }
-
         return coordinates;
     }
 
@@ -133,7 +130,6 @@ public static List<Tuple<int, int>> GenerateFenceCoordinates(Tuple<int, int> sta
             {
                 char direction = Console.ReadLine().ToLower()[0];
                 if (new[] { 'n', 's', 'e', 'w' }.Contains(direction)) return direction;
-
                 Console.WriteLine("Invalid direction.");
             }
         }
@@ -146,7 +142,7 @@ public static List<Tuple<int, int>> GenerateFenceCoordinates(Tuple<int, int> sta
         {
             for (int y = (int)(location.Item2 - range); y <= location.Item2 + range; y++)
             {
-                if (Utility.EuclideanDistance(location.Item1, location.Item2, x, y) <= range)
+                if (EuclideanDistance(location.Item1, location.Item2, x, y) <= range)
                 {
                     coordinates.Add(new Tuple<int, int>(x, y));
                 }
@@ -158,8 +154,8 @@ public static List<Tuple<int, int>> GenerateFenceCoordinates(Tuple<int, int> sta
     {
         var coordinates = new List<Tuple<int, int>>();
     
-        int maxX = 1000;
-        int maxY = 1000;
+        int maxX = 750;
+        int maxY = 750;
         int minX = 0;
         int minY = 0;
     
@@ -206,7 +202,6 @@ public static List<Tuple<int, int>> GenerateFenceCoordinates(Tuple<int, int> sta
                 }
                 break;
         }
-    
         return coordinates;
     } 
 }
@@ -230,7 +225,6 @@ public class ObstacleManager
     {
         Console.WriteLine("Enter your current location (X,Y):");
         var currentLocation = Utility.ReadCoordinates();
-
         // Check if the agent is on an obstacle
         bool onObstacle = IsCoordinateBlocked(currentLocation);
         if (onObstacle)
@@ -295,11 +289,116 @@ public class ObstacleManager
                         break; // Exit the loop as soon as we find an obstacle at this coordinate.
                     }
                 }
-
                 Console.Write(symbol);
             }
-
             Console.WriteLine();
         }
+    }
+    
+
+    // Gets the neighbouring coordinates of the given location in North, East, South, and West directions.
+    public List<Tuple<int, int>> GetNeighbors(Tuple<int, int> location)
+    {
+        // Define the neighboring coordinates
+        List<Tuple<int, int>> neighbors = new List<Tuple<int, int>>
+        {
+            new Tuple<int, int>(location.Item1, location.Item2 - 1), // North
+            new Tuple<int, int>(location.Item1 + 1, location.Item2), // East
+            new Tuple<int, int>(location.Item1, location.Item2 + 1), // South
+            new Tuple<int, int>(location.Item1 - 1, location.Item2)  // West
+        };
+
+        // Return only the neighbors that are not blocked
+        return neighbors.Where(coord => !IsCoordinateBlocked(coord)).ToList();
+    }
+
+    // Guides the user to find a safe path from their current location to an objective.
+    public void FindSafePath()
+    {
+        Console.WriteLine("Enter your current location (X,Y):");
+        var start = Utility.ReadCoordinates();
+
+        Console.WriteLine("Enter the location of the mission objective (X,Y):");
+        var end = Utility.ReadCoordinates();
+
+        // Check if the user is already at the objective
+        if (start.Item1 == end.Item1 && start.Item2 == end.Item2)
+        {
+            Console.WriteLine("Agent, you are already at the objective.");
+            return;
+        }
+
+        // Check if the objective is blocked
+        if (IsCoordinateBlocked(end))
+        {
+            Console.WriteLine("The objective is blocked by an obstacle and cannot be reached.");
+            return;
+        }
+
+        if (TryFindPath(start, end, out var cameFrom))
+        {
+            Console.WriteLine("The following path will take you to the objective:");
+            List<string> path = ReconstructPath(cameFrom, start, end);
+            Console.WriteLine(string.Join("", path));
+        }
+        else
+        {
+            Console.WriteLine("There is no safe path to the objective.");
+        }
+    }
+
+    // Uses Breadth-First Search (BFS) to determine if a path exists between the start and end coordinates.
+    private bool TryFindPath(Tuple<int, int> start, Tuple<int, int> end, out Dictionary<Tuple<int, int>, Tuple<int, int>> cameFrom)
+    {
+        Queue<Tuple<int, int>> frontier = new Queue<Tuple<int, int>>();
+        frontier.Enqueue(start);
+
+        cameFrom = new Dictionary<Tuple<int, int>, Tuple<int, int>> { [start] = null };
+
+        while (frontier.Any())
+        {
+            var current = frontier.Dequeue();
+
+            // Check if the current location is the end location
+            if (current.Item1 == end.Item1 && current.Item2 == end.Item2)
+            {
+                return true;
+            }
+
+            // Explore neighbors
+            foreach (var next in GetNeighbors(current))
+            {
+                if (!cameFrom.ContainsKey(next))
+                {
+                    frontier.Enqueue(next);
+                    cameFrom[next] = current;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Reconstructs the path from the end coordinate to the start coordinate using the 'cameFrom' map.
+    private List<string> ReconstructPath(Dictionary<Tuple<int, int>, Tuple<int, int>> cameFrom, Tuple<int, int> start, Tuple<int, int> end)
+    {
+        List<string> path = new List<string>();
+        var current = end;
+
+        while (current != start)
+        {
+            var previous = cameFrom[current];
+            if (previous.Item1 == current.Item1)
+            {
+                path.Add(previous.Item2 < current.Item2 ? "S" : "N");
+            }
+            else if (previous.Item2 == current.Item2)
+            {
+                path.Add(previous.Item1 < current.Item1 ? "E" : "W");
+            }
+
+            current = previous;
+        }
+        path.Reverse();
+        return path;
     }
 }

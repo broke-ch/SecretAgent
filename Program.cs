@@ -52,7 +52,7 @@ public class Program
                 manager.DisplayObstacleMap();
                 break;
             case "p":
-                Console.WriteLine("This feature is not yet implemented.");
+                manager.FindSafePath();
                 break;
             case "x":
                 Environment.Exit(0);
