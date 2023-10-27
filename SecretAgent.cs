@@ -1,37 +1,55 @@
-// Abstract base class representing an obstacle.
+/// <summary>
+/// Represents an abstract obstacle class with a set of coordinates.
+/// </summary>
 public abstract class Obstacle
 {
-    // HashSet storing the coordinates of the obstacle.
-    public HashSet<Tuple<int, int>> Coordinates { get; protected set; } = new HashSet<Tuple<int, int>>();
+    // set to store obstacle's coordinates.
+    private HashSet<Tuple<int, int>> _coordinates = new HashSet<Tuple<int, int>>();
 
-    // Abstract method to add the obstacle. Each derived class must provide its own implementation.
+    // property to expose the obstacle's coordinates.
+    public IEnumerable<Tuple<int, int>> Coordinates => _coordinates;
+
+    // method to be implemented by specific obstacle types for adding coordinates.
     public abstract void Add();
-}
 
-// sub class representing a Guard obstacle.
-public class Guard : Obstacle
-{
-    // add Guard's location.
-    public override void Add()
+    // method to add a single coordinate to the set.
+    protected void AddCoordinate(Tuple<int, int> coordinate)
     {
-        Console.WriteLine("Enter the Guard's location (X,Y):");
-        Coordinates.Add(Utility.ReadCoordinates());
+        _coordinates.Add(coordinate);
+    }
+
+    // method to add a range of coordinates to the set.
+    protected void AddRangeOfCoordinates(IEnumerable<Tuple<int, int>> coordinates)
+    {
+        foreach (var coord in coordinates)
+        {
+            _coordinates.Add(coord);
+        }
     }
 }
 
-// sub class representing a Fence obstacle.
+// Guard obstacle.
+public class Guard : Obstacle
+{
+    // Overrides the Add method to get and store the Guard's location.
+    public override void Add()
+    {
+        Console.WriteLine("Enter the Guard's location (X,Y):");
+        AddCoordinate(Utility.ReadCoordinates());
+    }
+}
+
+// Fence obstacle.
 public class Fence : Obstacle
 {
-    // add the start and end location of a fence.
+    // Overrides the Add method to get and store the Fence's start and end locations.
     public override void Add()
     {
         Console.WriteLine("Enter the location where the fence starts (X,Y):");
         var startLocation = Utility.ReadCoordinates();
-
         Console.WriteLine("Enter the location where the fence ends (X,Y):");
         var endLocation = Utility.ReadCoordinates();
 
-        // Validate if the fence is either horizontal or vertical.
         if (!Utility.IsValidFence(startLocation, endLocation))
         {
             Console.WriteLine("Fences must be horizontal or vertical.");
@@ -39,51 +57,47 @@ public class Fence : Obstacle
             return;
         }
 
-        // Generate and store the coordinates for the entire fence based on start and end locations.
-        Coordinates.UnionWith(Utility.GenerateFenceCoordinates(startLocation, endLocation));
+        AddRangeOfCoordinates(Utility.GenerateFenceCoordinates(startLocation, endLocation));
     }
 }
 
-// sub class representing a Sensor obstacle.
+// Sensor obstacle.
 public class Sensor : Obstacle
 {
-    // add a sensor's location and its range.
+    // Overrides the Add method to get and store the Sensor's location and range.
     public override void Add()
     {
         Console.WriteLine("Enter the sensor's location (X,Y):");
         var location = Utility.ReadCoordinates();
-
         float range = Utility.ReadPositiveFloat("Enter the sensor's range (in klicks):");
-        // generate and store the coordinates covered by the sensor's range.
-        Coordinates.UnionWith(Utility.GenerateSensorRangeCoordinates(location, range));
+        AddRangeOfCoordinates(Utility.GenerateSensorRangeCoordinates(location, range));
     }
 }
 
-// sub class representing a Camera obstacle.
+// Camera obstacle.
 public class Camera : Obstacle
 {
-    // add a camera's location and its viewing direction.
+    // Overrides the Add method to get and store the Camera's location and facing direction.
     public override void Add()
     {
         Console.WriteLine("Enter the camera's location (X,Y):");
         var location = Utility.ReadCoordinates();
-
         char direction = Utility.ReadDirection("Enter the direction the camera is facing (n, s, e, w):");
-        // generate and store the coordinates covered by the camera's field of vision.
-        Coordinates.UnionWith(Utility.GenerateCameraVisionCoordinates(location, direction));
+        AddRangeOfCoordinates(Utility.GenerateCameraVisionCoordinates(location, direction));
     }
 }
+
+// Nanobot obstacle.
 public class Nanobot : Obstacle
 {
+    // Overrides the Add method to get and store the Nanobot field's top-left, bottom-right locations and number of nanobots.
     public override void Add()
     {
-        // prompt the user for the boundaries of field that the nanobots will be randomly dropped in
         Console.WriteLine("Enter the location of the top-left cell of the nanobot field (X,Y):");
         var topLeft = Utility.ReadCoordinates();
         Console.WriteLine("Enter the location of the bottom-right cell of the nanobot field (X,Y):");
         var bottomRight = Utility.ReadCoordinates();
 
-        // ensure that the specified boundaries are valid
         if (bottomRight.Item1 < topLeft.Item1 || bottomRight.Item2 < topLeft.Item2)
         {
             Console.WriteLine("Invalid field specification.");
@@ -91,15 +105,13 @@ public class Nanobot : Obstacle
         }
 
         int numberOfBots = Utility.ReadPositiveInt("How many nanobots are there?");
-
-        foreach (var coordinate in Utility.GenerateNanobotCoordinates(topLeft, bottomRight, numberOfBots))
-        {
-            Coordinates.Add(coordinate);
-        }
+        AddRangeOfCoordinates(Utility.GenerateNanobotCoordinates(topLeft, bottomRight, numberOfBots));
     }
 }
 
-// Utility class containing methods to assist with operations related to obstacles.
+/// <summary>
+/// Contains utility methods to assist with operations related to obstacles.
+/// </summary>
 public class Utility
 {
     private static Random _random = new Random(); // made _random static
@@ -181,7 +193,7 @@ public class Utility
         }
     }
 
-    // Reads and validates a direction character (n, s, e, w) from the user.
+    // reads and validates a direction character (n, s, e, w) from the user.
     public static char ReadDirection(string prompt)
     {
         Console.WriteLine(prompt);
@@ -288,7 +300,9 @@ public class Utility
     }
 }
 
-// manage the obstacles on a grid and provides utilities to navigate around them.
+/// <summary>
+/// Manages obstacles on a grid and provides utilities to navigate around them.
+/// </summary>
 public class ObstacleManager
 {
     // list of all obstacles on the grid
