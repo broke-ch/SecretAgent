@@ -25,6 +25,7 @@ public class Program
         Console.WriteLine("f) Add 'Fence' obstacle");
         Console.WriteLine("s) Add 'Sensor' obstacle");
         Console.WriteLine("c) Add 'Camera' obstacle");
+        Console.WriteLine("n) Add 'Nanobots' obstacle");
         Console.WriteLine("d) Show safe directions");
         Console.WriteLine("m) Display obstacle map");
         Console.WriteLine("p) Find safe path");
@@ -52,6 +53,10 @@ public class Program
             case "c":
                 // add a Camera obstacle.
                 manager.AddObstacle(new Camera());
+                break;
+            case "n":
+                // add Nanobots obstacle.
+                manager.AddObstacle(new Nanobot());
                 break;
             case "d":
                 // show directions that are safe to move in.

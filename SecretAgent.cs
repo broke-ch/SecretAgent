@@ -73,10 +73,36 @@ public class Camera : Obstacle
         Coordinates.UnionWith(Utility.GenerateCameraVisionCoordinates(location, direction));
     }
 }
+public class Nanobot : Obstacle
+{
+    public override void Add()
+    {
+        // prompt the user for the boundaries of field that the nanobots will be randomly dropped in
+        Console.WriteLine("Enter the location of the top-left cell of the nanobot field (X,Y):");
+        var topLeft = Utility.ReadCoordinates();
+        Console.WriteLine("Enter the location of the bottom-right cell of the nanobot field (X,Y):");
+        var bottomRight = Utility.ReadCoordinates();
+
+        // ensure that the specified boundaries are valid
+        if (bottomRight.Item1 < topLeft.Item1 || bottomRight.Item2 < topLeft.Item2)
+        {
+            Console.WriteLine("Invalid field specification.");
+            return;
+        }
+
+        int numberOfBots = Utility.ReadPositiveInt("How many nanobots are there?");
+
+        foreach (var coordinate in Utility.GenerateNanobotCoordinates(topLeft, bottomRight, numberOfBots))
+        {
+            Coordinates.Add(coordinate);
+        }
+    }
+}
 
 // Utility class containing methods to assist with operations related to obstacles.
-public static class Utility
+public class Utility
 {
+    private static Random _random = new Random(); // made _random static
     // Reads coordinates from the user in the format (X,Y) and validates the input.
     public static Tuple<int, int> ReadCoordinates()
     {
@@ -144,6 +170,17 @@ public static class Utility
         }
     }
 
+    public static int ReadPositiveInt(string prompt)
+    {
+        Console.WriteLine(prompt);
+        while (true)
+        {
+            if (int.TryParse(Console.ReadLine(), out int result) && result > 0)
+                return result;
+            Console.WriteLine("Invalid input. Please enter a positive integer.");
+        }
+    }
+
     // Reads and validates a direction character (n, s, e, w) from the user.
     public static char ReadDirection(string prompt)
     {
@@ -157,9 +194,9 @@ public static class Utility
     }
 
     // create a list of coordinates covered by a sensor's range.
-    public static List<Tuple<int, int>> GenerateSensorRangeCoordinates(Tuple<int, int> location, float range)
+    public static HashSet<Tuple<int, int>> GenerateSensorRangeCoordinates(Tuple<int, int> location, float range)
     {
-        var coordinates = new List<Tuple<int, int>>();
+        var coordinates = new HashSet<Tuple<int, int>>();
 
         int min_x = (int)Math.Floor(location.Item1 - range);
         int max_x = (int)Math.Ceiling(location.Item1 + range);
@@ -175,6 +212,19 @@ public static class Utility
                     coordinates.Add(new Tuple<int, int>(x, y));
                 }
             }
+        }
+
+        return coordinates;
+    }
+    public static HashSet<Tuple<int, int>> GenerateNanobotCoordinates(Tuple<int, int> topLeft, Tuple<int, int> bottomRight, int numberOfBots)
+    {
+        var coordinates = new HashSet<Tuple<int, int>>();
+
+        while (coordinates.Count < numberOfBots)
+        {
+            int x = _random.Next(topLeft.Item1, bottomRight.Item1 + 1);
+            int y = _random.Next(topLeft.Item2, bottomRight.Item2 + 1);
+            coordinates.Add(new Tuple<int, int>(x, y));
         }
 
         return coordinates;
@@ -325,6 +375,8 @@ public class ObstacleManager
                         if (obstacle is Fence) symbol = 'f';
                         if (obstacle is Camera) symbol = 'c';
                         if (obstacle is Sensor) symbol = 's';
+                        if (obstacle is Nanobot) symbol = 'n';
+
                         break;
                     }
                 }
