@@ -1,12 +1,17 @@
+// Abstract base class representing an obstacle.
 public abstract class Obstacle
 {
+    // HashSet storing the coordinates of the obstacle.
     public HashSet<Tuple<int, int>> Coordinates { get; protected set; } = new HashSet<Tuple<int, int>>();
 
+    // Abstract method to add the obstacle. Each derived class must provide its own implementation.
     public abstract void Add();
 }
 
+// Derived class representing a Guard obstacle.
 public class Guard : Obstacle
 {
+    // Implementation for adding a Guard's location.
     public override void Add()
     {
         Console.WriteLine("Enter the Guard's location (X,Y):");
@@ -14,8 +19,10 @@ public class Guard : Obstacle
     }
 }
 
+// Derived class representing a Fence obstacle.
 public class Fence : Obstacle
 {
+    // Implementation for adding the start and end location of a fence.
     public override void Add()
     {
         Console.WriteLine("Enter the location where the fence starts (X,Y):");
@@ -24,6 +31,7 @@ public class Fence : Obstacle
         Console.WriteLine("Enter the location where the fence ends (X,Y):");
         var endLocation = Utility.ReadCoordinates();
 
+        // Validate if the fence is either horizontal or vertical.
         if (!Utility.IsValidFence(startLocation, endLocation))
         {
             Console.WriteLine("Fences must be horizontal or vertical.");
@@ -31,36 +39,45 @@ public class Fence : Obstacle
             return;
         }
 
+        // Generate and store the coordinates for the entire fence based on start and end locations.
         Coordinates.UnionWith(Utility.GenerateFenceCoordinates(startLocation, endLocation));
     }
 }
 
+// Derived class representing a Sensor obstacle.
 public class Sensor : Obstacle
 {
+    // Implementation for adding a sensor's location and its range.
     public override void Add()
     {
         Console.WriteLine("Enter the sensor's location (X,Y):");
         var location = Utility.ReadCoordinates();
 
         float range = Utility.ReadPositiveFloat("Enter the sensor's range (in klicks):");
+        // Generate and store the coordinates covered by the sensor's range.
         Coordinates.UnionWith(Utility.GenerateSensorRangeCoordinates(location, range));
     }
 }
 
+// Derived class representing a Camera obstacle.
 public class Camera : Obstacle
 {
+    // Implementation for adding a camera's location and its viewing direction.
     public override void Add()
     {
         Console.WriteLine("Enter the camera's location (X,Y):");
         var location = Utility.ReadCoordinates();
 
         char direction = Utility.ReadDirection("Enter the direction the camera is facing (n, s, e, w):");
+        // Generate and store the coordinates covered by the camera's field of vision.
         Coordinates.UnionWith(Utility.GenerateCameraVisionCoordinates(location, direction));
     }
 }
 
+// Utility class containing methods to assist with operations related to obstacles.
 public static class Utility
 {
+    // Reads coordinates from the user in the format (X,Y) and validates the input.
     public static Tuple<int, int> ReadCoordinates()
     {
         while (true)
@@ -73,24 +90,27 @@ public static class Utility
         }
     }
 
+    // Calculates the Euclidean distance between two points.
     public static double EuclideanDistance(int x1, int y1, int x2, int y2)
     {
         return Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
     }
 
+    // Checks if the given start and end points form a valid horizontal or vertical fence.
     public static bool IsValidFence(Tuple<int, int> start, Tuple<int, int> end)
     {
         return (start.Item1 == end.Item1 || start.Item2 == end.Item2) &&
                !(start.Item1 == end.Item1 && start.Item2 == end.Item2);
     }
 
+    // Generates a list of coordinates for a fence based on its start and end points.
     public static List<Tuple<int, int>> GenerateFenceCoordinates(Tuple<int, int> start, Tuple<int, int> end)
     {
         var coordinates = new List<Tuple<int, int>>();
 
+        // Check for vertical fence
         if (start.Item1 == end.Item1)
         {
-            // Vertical fence
             int startY = Math.Min(start.Item2, end.Item2);
             int endY = Math.Max(start.Item2, end.Item2);
             for (int y = startY; y <= endY; y++)
@@ -98,9 +118,9 @@ public static class Utility
                 coordinates.Add(new Tuple<int, int>(start.Item1, y));
             }
         }
+        // Check for horizontal fence
         else if (start.Item2 == end.Item2)
         {
-            // Horizontal fence
             int startX = Math.Min(start.Item1, end.Item1);
             int endX = Math.Max(start.Item1, end.Item1);
             for (int x = startX; x <= endX; x++)
@@ -112,6 +132,7 @@ public static class Utility
         return coordinates;
     }
 
+    // Reads and validates a positive floating point value from the user.
     public static float ReadPositiveFloat(string prompt)
     {
         Console.WriteLine(prompt);
@@ -123,6 +144,7 @@ public static class Utility
         }
     }
 
+    // Reads and validates a direction character (n, s, e, w) from the user.
     public static char ReadDirection(string prompt)
     {
         Console.WriteLine(prompt);
@@ -134,6 +156,7 @@ public static class Utility
         }
     }
 
+    // Generates a list of coordinates covered by a sensor's range.
     public static List<Tuple<int, int>> GenerateSensorRangeCoordinates(Tuple<int, int> location, float range)
     {
         var coordinates = new List<Tuple<int, int>>();
@@ -157,6 +180,7 @@ public static class Utility
         return coordinates;
     }
 
+    // Generates a set of coordinates based on a camera's location and its viewing direction.
     public static HashSet<Tuple<int, int>> GenerateCameraVisionCoordinates(Tuple<int, int> location, char direction)
     {
         var coordinates = new HashSet<Tuple<int, int>>();
@@ -165,6 +189,7 @@ public static class Utility
         int minX = -1000;
         int minY = -1000;
 
+        // Depending on the camera's direction, calculate its field of vision
         switch (direction)
         {
             case 'n':
@@ -213,23 +238,29 @@ public static class Utility
     }
 }
 
+// Manages the obstacles on a grid and provides utilities to navigate around them.
 public class ObstacleManager
 {
+    // List of all obstacles on the grid
     private List<Obstacle> Obstacles { get; } = new List<Obstacle>();
 
+    // Adds an obstacle to the grid.
     public void AddObstacle(Obstacle obstacle)
     {
         obstacle.Add();
         Obstacles.Add(obstacle);
     }
 
+    // Checks if a specific coordinate is blocked by an obstacle.
     public bool IsCoordinateBlocked(Tuple<int, int> coordinate)
     {
         return Obstacles.Any(o => o.Coordinates.Contains(coordinate));
     }
 
+    // Informs the user about safe directions to move in from their current location.
     public void ShowSafeDirections()
     {
+        // Prompt the user for their current location
         Console.WriteLine("Enter your current location (X,Y):");
         var currentLocation = Utility.ReadCoordinates();
 
@@ -241,6 +272,7 @@ public class ObstacleManager
             return;
         }
 
+        // Determine which directions are safe to move in
         List<string> safeDirections = new List<string> { "N", "S", "E", "W" };
         if (IsCoordinateBlocked(new Tuple<int, int>(currentLocation.Item1, currentLocation.Item2 - 1)))
             safeDirections.Remove("N");
@@ -251,6 +283,7 @@ public class ObstacleManager
         if (IsCoordinateBlocked(new Tuple<int, int>(currentLocation.Item1 - 1, currentLocation.Item2)))
             safeDirections.Remove("W");
 
+        // Inform the user of the safe directions
         if (safeDirections.Count == 0)
         {
             Console.WriteLine("You cannot safely move in any direction. Abort mission.");
@@ -261,13 +294,16 @@ public class ObstacleManager
         }
     }
 
+    // Displays a visual representation of the grid with obstacles.
     public void DisplayObstacleMap()
     {
+        // Prompt the user for the boundaries of the map to be displayed
         Console.WriteLine("Enter the location of the top-left cell of the map (X,Y):");
         var topLeft = Utility.ReadCoordinates();
         Console.WriteLine("Enter the location of the bottom-right cell of the map (X,Y):");
         var bottomRight = Utility.ReadCoordinates();
 
+        // Ensure that the specified boundaries are valid
         if (bottomRight.Item1 < topLeft.Item1 || bottomRight.Item2 < topLeft.Item2)
         {
             Console.WriteLine("Invalid map specification.");
@@ -275,6 +311,7 @@ public class ObstacleManager
             return;
         }
 
+        // Display the grid with obstacle symbols
         for (int y = topLeft.Item2; y <= bottomRight.Item2; y++)
         {
             for (int x = topLeft.Item1; x <= bottomRight.Item1; x++)
@@ -297,6 +334,7 @@ public class ObstacleManager
         }
     }
 
+    // Returns the neighboring coordinates around a given location that are not blocked.
     public List<Tuple<int, int>> GetNeighbors(Tuple<int, int> location)
     {
         List<Tuple<int, int>> neighbors = new List<Tuple<int, int>>
@@ -310,25 +348,28 @@ public class ObstacleManager
         return neighbors.Where(coord => !IsCoordinateBlocked(coord)).ToList();
     }
 
+    // Finds and displays a safe path from the user's location to the mission objective.
     public void FindSafePath()
     {
+        // Prompt the user for the start and end locations
         Console.WriteLine("Enter your current location (X,Y):");
         var start = Utility.ReadCoordinates();
         Console.WriteLine("Enter the location of the mission objective (X,Y):");
         var end = Utility.ReadCoordinates();
 
+        // Check if the start and end locations are the same or if the objective is blocked
         if (start.Item1 == end.Item1 && start.Item2 == end.Item2)
         {
             Console.WriteLine("Agent, you are already at the objective.");
             return;
         }
-
         if (IsCoordinateBlocked(end))
         {
             Console.WriteLine("The objective is blocked by an obstacle and cannot be reached.");
             return;
         }
 
+        // Try to find a path to the objective
         if (TryFindPath(start, end, out var cameFrom))
         {
             Console.WriteLine("The following path will take you to the objective:");
@@ -341,6 +382,7 @@ public class ObstacleManager
         }
     }
 
+    // Internal method to attempt to find a path using Breadth-First Search
     private bool TryFindPath(Tuple<int, int> start, Tuple<int, int> end, out Dictionary<Tuple<int, int>, Tuple<int, int>> cameFrom)
     {
         Queue<Tuple<int, int>> frontier = new Queue<Tuple<int, int>>();
@@ -369,6 +411,7 @@ public class ObstacleManager
         return false;
     }
 
+    // Internal method to reconstruct the path from the cameFrom dictionary
     private List<string> ReconstructPath(Dictionary<Tuple<int, int>, Tuple<int, int>> cameFrom, Tuple<int, int> start, Tuple<int, int> end)
     {
         List<string> path = new List<string>();
