@@ -34,8 +34,15 @@ public class Guard : Obstacle
     // Overrides the Add method to get and store the Guard's location.
     public override void Add()
     {
-        Console.WriteLine("Enter the Guard's location (X,Y):");
-        AddCoordinate(Utility.ReadCoordinates());
+        try
+        {
+            Console.WriteLine("Enter the Guard's location (X,Y):");
+            AddCoordinate(Utility.ReadCoordinates());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
 }
 
@@ -45,19 +52,27 @@ public class Fence : Obstacle
     // Overrides the Add method to get and store the Fence's start and end locations.
     public override void Add()
     {
-        Console.WriteLine("Enter the location where the fence starts (X,Y):");
-        var startLocation = Utility.ReadCoordinates();
-        Console.WriteLine("Enter the location where the fence ends (X,Y):");
-        var endLocation = Utility.ReadCoordinates();
-
-        if (!Utility.IsValidFence(startLocation, endLocation))
+        try
         {
-            Console.WriteLine("Fences must be horizontal or vertical.");
-            Add();
-            return;
-        }
+            Console.WriteLine("Enter the location where the fence starts (X,Y):");
+            var startLocation = Utility.ReadCoordinates();
+            Console.WriteLine("Enter the location where the fence ends (X,Y):");
+            var endLocation = Utility.ReadCoordinates();
 
-        AddRangeOfCoordinates(Utility.GenerateFenceCoordinates(startLocation, endLocation));
+            if (!Utility.IsValidFence(startLocation, endLocation))
+            {
+                Console.WriteLine("Fences must be horizontal or vertical.");
+                Add();
+            }
+            else
+            {
+                AddRangeOfCoordinates(Utility.GenerateFenceCoordinates(startLocation, endLocation));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
 }
 
@@ -67,10 +82,17 @@ public class Sensor : Obstacle
     // Overrides the Add method to get and store the Sensor's location and range.
     public override void Add()
     {
-        Console.WriteLine("Enter the sensor's location (X,Y):");
-        var location = Utility.ReadCoordinates();
-        float range = Utility.ReadPositiveFloat("Enter the sensor's range (in klicks):");
-        AddRangeOfCoordinates(Utility.GenerateSensorRangeCoordinates(location, range));
+        try
+        {
+            Console.WriteLine("Enter the sensor's location (X,Y):");
+            var location = Utility.ReadCoordinates();
+            float range = Utility.ReadPositiveFloat("Enter the sensor's range (in klicks):");
+            AddRangeOfCoordinates(Utility.GenerateSensorRangeCoordinates(location, range));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
 }
 
@@ -80,10 +102,17 @@ public class Camera : Obstacle
     // Overrides the Add method to get and store the Camera's location and facing direction.
     public override void Add()
     {
-        Console.WriteLine("Enter the camera's location (X,Y):");
-        var location = Utility.ReadCoordinates();
-        char direction = Utility.ReadDirection("Enter the direction the camera is facing (n, s, e, w):");
-        AddRangeOfCoordinates(Utility.GenerateCameraVisionCoordinates(location, direction));
+        try
+        {
+            Console.WriteLine("Enter the camera's location (X,Y):");
+            var location = Utility.ReadCoordinates();
+            char direction = Utility.ReadDirection("Enter the direction the camera is facing (n, s, e, w):");
+            AddRangeOfCoordinates(Utility.GenerateCameraVisionCoordinates(location, direction));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
 }
 
@@ -93,19 +122,26 @@ public class Nanobot : Obstacle
     // Overrides the Add method to get and store the Nanobot field's top-left, bottom-right locations and number of nanobots.
     public override void Add()
     {
-        Console.WriteLine("Enter the location of the top-left cell of the nanobot field (X,Y):");
-        var topLeft = Utility.ReadCoordinates();
-        Console.WriteLine("Enter the location of the bottom-right cell of the nanobot field (X,Y):");
-        var bottomRight = Utility.ReadCoordinates();
-
-        if (bottomRight.Item1 < topLeft.Item1 || bottomRight.Item2 < topLeft.Item2)
+        try
         {
-            Console.WriteLine("Invalid field specification.");
-            return;
-        }
+            Console.WriteLine("Enter the location of the top-left cell of the nanobot field (X,Y):");
+            var topLeft = Utility.ReadCoordinates();
+            Console.WriteLine("Enter the location of the bottom-right cell of the nanobot field (X,Y):");
+            var bottomRight = Utility.ReadCoordinates();
 
-        int numberOfBots = Utility.ReadPositiveInt("How many nanobots are there?");
-        AddRangeOfCoordinates(Utility.GenerateNanobotCoordinates(topLeft, bottomRight, numberOfBots));
+            if (bottomRight.Item1 < topLeft.Item1 || bottomRight.Item2 < topLeft.Item2)
+            {
+                Console.WriteLine("Invalid field specification.");
+                return;
+            }
+
+            int numberOfBots = Utility.ReadPositiveInt("How many nanobots are there?");
+            AddRangeOfCoordinates(Utility.GenerateNanobotCoordinates(topLeft, bottomRight, numberOfBots));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
 }
 
@@ -116,17 +152,23 @@ public class Utility
 {
     private static Random _random = new Random(); // made _random static
     // Reads coordinates from the user in the format (X,Y) and validates the input.
-    public static Tuple<int, int> ReadCoordinates()
+      public static Tuple<int, int> ReadCoordinates()
     {
         while (true)
         {
-            string[] coords = Console.ReadLine().Split(',');
-            if (coords.Length == 2 && int.TryParse(coords[0], out int x) && int.TryParse(coords[1], out int y))
-                return new Tuple<int, int>(x, y);
-
-            Console.WriteLine("Invalid input.");
+            try
+            {
+                string[] coords = Console.ReadLine().Split(',');
+                if (coords.Length == 2 && int.TryParse(coords[0], out int x) && int.TryParse(coords[1], out int y))
+                    return new Tuple<int, int>(x, y);
+                throw new Exception("Invalid input format for coordinates. Expected format: X,Y");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
         }
-    }
+    } 
 
     // calculate the Euclidean distance between two points.
     public static double EuclideanDistance(int x1, int y1, int x2, int y2)
